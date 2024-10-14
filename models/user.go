@@ -1,9 +1,9 @@
 package models
 
 type User struct {
-    ID              uint   `json:"id" gorm:"primaryKey"`
-    Name            string `json:"name"`
-    Email           string `json:"email" gorm:"unique"`
-    Password        string `json:"password"`
-    ProfilePicture  string `json:"profile_picture"`
+    ID       int    `json:"id"`
+    Username string `json:"username"`
+    Email    string `json:"email"`
+    Password string `json:"password"` // পাসওয়ার্ড সাধারণত এনক্রিপ্ট করা উচিত
+    Picture  string `json:"picture"`  // পিকচার URL
 }

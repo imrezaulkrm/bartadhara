@@ -1,87 +1,88 @@
 package controllers
 
 import (
+    "github.com/gorilla/mux"
     "encoding/json"
     "net/http"
-    "github.com/gorilla/mux"
-    "news_backend/database" // ডেটাবেস প্যাকেজ
+    "news_backend/database"
+    "strconv"
 )
 
-// সব নিউজ ফেচ করার জন্য ফাংশন
+// সমস্ত নিউজ ফেচ করার জন্য ফাংশন
 func GetAllNews(w http.ResponseWriter, r *http.Request) {
-    newsList, err := database.FetchAllNews()
+    news, err := database.FetchAllNews()
     if err != nil {
-        http.Error(w, "Unable to fetch news", http.StatusInternalServerError)
+        http.Error(w, err.Error(), http.StatusInternalServerError)
         return
     }
-    json.NewEncoder(w).Encode(newsList)
+    w.Header().Set("Content-Type", "application/json")
+    json.NewEncoder(w).Encode(news)
 }
 
-// নির্দিষ্ট আইডি দ্বারা নিউজ ফেচ করার জন্য ফাংশন
+// নির্দিষ্ট নিউজ ফেচ করার জন্য ফাংশন
 func GetNewsByID(w http.ResponseWriter, r *http.Request) {
     vars := mux.Vars(r)
-    id := vars["id"]
-
-    // ডেটাবেস থেকে আইডি দ্বারা নিউজ খোঁজা
+    id, err := strconv.Atoi(vars["id"])
+    if err != nil {
+        http.Error(w, "Invalid ID", http.StatusBadRequest)
+        return
+    }
     news, err := database.FetchNewsByID(id)
     if err != nil {
-        http.Error(w, "News not found", http.StatusNotFound)
+        http.Error(w, err.Error(), http.StatusNotFound)
         return
     }
-
+    w.Header().Set("Content-Type", "application/json")
     json.NewEncoder(w).Encode(news)
 }
 
-// নতুন নিউজ ইনসার্ট করার জন্য ফাংশন
+// নতুন নিউজ তৈরি করার জন্য ফাংশন
 func CreateNews(w http.ResponseWriter, r *http.Request) {
     var news database.News
-    err := json.NewDecoder(r.Body).Decode(&news)
-    if err != nil {
-        http.Error(w, "Unable to decode JSON", http.StatusBadRequest)
+    if err := json.NewDecoder(r.Body).Decode(&news); err != nil {
+        http.Error(w, err.Error(), http.StatusBadRequest)
         return
     }
-
-    err = database.InsertNews(news)
-    if err != nil {
-        http.Error(w, "Unable to insert news", http.StatusInternalServerError)
+    if err := database.InsertNews(news); err != nil {
+        http.Error(w, err.Error(), http.StatusInternalServerError)
         return
     }
-
     w.WriteHeader(http.StatusCreated)
-    json.NewEncoder(w).Encode(news)
 }
 
+// নিউজ আপডেট করার জন্য ফাংশন
 func UpdateNews(w http.ResponseWriter, r *http.Request) {
     vars := mux.Vars(r)
-    id := vars["id"]
+    id, err := strconv.Atoi(vars["id"])
+    if err != nil {
+        http.Error(w, "Invalid ID", http.StatusBadRequest)
+        return
+    }
 
     var news database.News
-    err := json.NewDecoder(r.Body).Decode(&news)
-    if err != nil {
-        http.Error(w, "Invalid request payload", http.StatusBadRequest)
+    if err := json.NewDecoder(r.Body).Decode(&news); err != nil {
+        http.Error(w, err.Error(), http.StatusBadRequest)
         return
     }
 
-    // নিউজ আপডেট করার জন্য ফাংশন কল
-    err = database.UpdateNews(id, news)
-    if err != nil {
-        http.Error(w, "Unable to update news", http.StatusInternalServerError)
+    if err := database.UpdateNews(id, news); err != nil {
+        http.Error(w, err.Error(), http.StatusInternalServerError)
         return
     }
-
     w.WriteHeader(http.StatusNoContent)
 }
 
 // নিউজ ডিলিট করার জন্য ফাংশন
 func DeleteNews(w http.ResponseWriter, r *http.Request) {
     vars := mux.Vars(r)
-    id := vars["id"]
-
-    err := database.DeleteNews(id)
+    id, err := strconv.Atoi(vars["id"])
     if err != nil {
-        http.Error(w, "Failed to delete news", http.StatusInternalServerError)
+        http.Error(w, "Invalid ID", http.StatusBadRequest)
         return
     }
-
-    w.WriteHeader(http.StatusNoContent) // 204 No Content
+    if err := database.DeleteNews(id); err != nil {
+        http.Error(w, err.Error(), http.StatusInternalServerError)
+        return
+    }
+    w.WriteHeader(http.StatusNoContent)
 }

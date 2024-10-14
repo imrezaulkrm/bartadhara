@@ -5,7 +5,13 @@ import (
     "news_backend/controllers"
 )
 
+// UserRoutes defines user-related routes
 func UserRoutes(r *mux.Router) {
-    r.HandleFunc("/register", controllers.RegisterUser).Methods("POST")
-    r.HandleFunc("/login", controllers.LoginUser).Methods("POST")
+    uc := controllers.UserController{}
+
+    r.HandleFunc("/users", uc.FetchAllUsers).Methods("GET")
+    r.HandleFunc("/users/{id}", uc.FetchUserByID).Methods("GET")
+    r.HandleFunc("/users", uc.InsertUser).Methods("POST")
+    r.HandleFunc("/users/{id}", uc.UpdateUser).Methods("PUT")
+    r.HandleFunc("/users/{id}", uc.DeleteUser).Methods("DELETE")
 }
