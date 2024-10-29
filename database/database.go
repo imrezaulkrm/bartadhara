@@ -2,13 +2,15 @@ package database
 
 import (
     "database/sql"
-    _ "github.com/go-sql-driver/mysql"
     "log"
-    //"fmt"
+    "errors"
+    _ "github.com/go-sql-driver/mysql" // MySQL ড্রাইভার
+    "news_backend/models"               // এখানে models প্যাকেজটি আমদানি করুন
 )
 
 // DB ভেরিয়েবল ডেটাবেস সংযোগের জন্য
 var db *sql.DB
+
 
 // নিউজ স্ট্রাক্ট
 type News struct {
@@ -23,25 +25,54 @@ type News struct {
 // এখানে User স্ট্রাক্ট ডিফাইন করুন
 type User struct {
     ID       int    `json:"id"`
+    Name     string `json:"name"`
     Username string `json:"username"`
     Email    string `json:"email"`
     Password string `json:"password"`
     Picture  string `json:"picture"`
 }
 
-// ডেটাবেসের সাথে সংযোগ স্থাপন করা
+// ConnectDB ডেটাবেসের সাথে সংযোগ স্থাপন করে
 func ConnectDB() {
     var err error
     db, err = sql.Open("mysql", "root:reza1234@tcp(127.0.0.1:3306)/news_db")
     if err != nil {
         log.Fatal(err)
     }
-    
+
     err = db.Ping() // ডেটাবেসে পিং
     if err != nil {
         log.Fatal("Cannot connect to database:", err)
     }
     log.Println("Connected to database successfully")
+}
+
+// UpdateUserCategories updates the categories for a specific user
+func UpdateUserCategories(userID int, categories []string) error {
+    // Start a transaction
+    tx, err := db.Begin() // Use `db` instead of `DB`
+    if err != nil {
+        return err
+    }
+
+    // Prepare the query to delete existing categories
+    deleteQuery := "DELETE FROM user_categories WHERE user_id = ?"
+    if _, err := tx.Exec(deleteQuery, userID); err != nil {
+        tx.Rollback()
+        return err
+    }
+
+    // Prepare the query to insert new categories
+    insertQuery := "INSERT INTO user_categories (user_id, category) VALUES (?, ?)"
+    for _, category := range categories {
+        if _, err := tx.Exec(insertQuery, userID, category); err != nil {
+            tx.Rollback()
+            return err
+        }
+    }
+
+    // Commit the transaction
+    return tx.Commit()
 }
 
 // সব নিউজ ফেচ করার জন্য ফাংশন
@@ -108,14 +139,42 @@ func DeleteNews(id int) error {
 
 // ------------------------ ইউজারের কাজ শুরু হচ্ছে ------------------------
 
-// নির্দিষ্ট আইডি দ্বারা ব্যবহারকারী ফেচ করার জন্য ফাংশন
-// FetchUserByID ফাংশন
-func FetchUserByID(id int) (User, error) {
-    log.Printf("Fetching user with ID: %d", id)
-    var user User
-    query := "SELECT id, username, email, password, picture FROM users WHERE id = ?"
+/// ------------------------ ইউজারের কাজ শুরু হচ্ছে ------------------------
 
-    err := db.QueryRow(query, id).Scan(&user.ID, &user.Username, &user.Email, &user.Password, &user.Picture)
+// FetchAllUsers ফাংশন সব ব্যবহারকারী ফেচ করে
+func FetchAllUsers() ([]models.User, error) {
+    log.Println("Fetching all users from the database...")
+    var userList []models.User
+    query := "SELECT id, name, username, email, password, picture FROM users" // picture যুক্ত করুন
+
+    rows, err := db.Query(query)
+    if err != nil {
+        log.Println("Error fetching users:", err)
+        return nil, err
+    }
+    defer rows.Close()
+
+    for rows.Next() {
+        var user models.User
+        if err := rows.Scan(&user.ID, &user.Name, &user.Username, &user.Email, &user.Password, &user.Picture); err != nil { // picture যুক্ত করুন
+            log.Println("Error scanning user row:", err)
+            return nil, err
+        }
+        userList = append(userList, user)
+    }
+    log.Println("Fetched users successfully:", userList)
+    return userList, nil
+}
+
+
+// FetchUserByID ফাংশন ব্যবহারকারী আইডি দ্বারা ব্যবহারকারী ফেচ করে
+// FetchUserByID ফাংশন ব্যবহারকারী আইডি দ্বারা ব্যবহারকারী ফেচ করে
+func FetchUserByID(id int) (models.User, error) {
+    log.Printf("Fetching user with ID: %d", id)
+    var user models.User
+    query := "SELECT id, name, username, email, password, picture FROM users WHERE id = ?" // picture যুক্ত করুন
+
+    err := db.QueryRow(query, id).Scan(&user.ID, &user.Name, &user.Username, &user.Email, &user.Password, &user.Picture) // picture যুক্ত করুন
     if err != nil {
         log.Println("Error fetching user by ID:", err)
         return user, err
@@ -126,55 +185,110 @@ func FetchUserByID(id int) (User, error) {
 }
 
 
-// ইউজারের প্রোফাইল পিকচার আপলোড করার জন্য ফাংশন
-func UploadUserPicture(userID int, pictureURL string) error {
-    query := "UPDATE users SET picture = ? WHERE id = ?"
-    _, err := db.Exec(query, pictureURL, userID)
-    return err
-}
-
-// নতুন ব্যবহারকারী ইনসার্ট করার জন্য ফাংশন
-func InsertUser(user User) error {
-    query := "INSERT INTO users (username, email, password, picture) VALUES (?, ?, ?, ?)"
-    _, err := db.Exec(query, user.Username, user.Email, user.Password, user.Picture)
-    return err
-}
-
-// সব ব্যবহারকারী ফেচ করার জন্য ফাংশন
-func FetchAllUsers() ([]User, error) {
-    log.Println("Fetching all users from the database...")
-    var userList []User
-    query := "SELECT id, username, email, picture FROM users"
-
-    rows, err := db.Query(query)
+// FetchUserByUsername retrieves a user by username from the database
+// FetchUserByUsername retrieves a user by username from the database
+func FetchUserByUsername(username string) (*models.User, error) {
+    var user models.User
+    query := "SELECT id, name, username, email, password, picture FROM users WHERE username = ?" // picture যুক্ত করুন
+    
+    err := db.QueryRow(query, username).Scan(&user.ID, &user.Name, &user.Username, &user.Email, &user.Password, &user.Picture) // picture যুক্ত করুন
     if err != nil {
-        log.Println("Error fetching users:", err)
+        if err == sql.ErrNoRows {
+            return nil, errors.New("user not found")
+        }
         return nil, err
     }
-    defer rows.Close()
-
-    for rows.Next() {
-        var user User
-        if err := rows.Scan(&user.ID, &user.Username, &user.Email, &user.Picture); err != nil {
-            log.Println("Error scanning user row:", err)
-            return nil, err
-        }
-        userList = append(userList, user)
-    }
-    log.Println("Fetched users successfully:", userList)
-    return userList, nil
+    
+    return &user, nil
 }
 
-// ব্যবহারকারী ডিলিট করার জন্য ফাংশন
+
+
+// FetchUserByEmail ফাংশন ব্যবহারকারীর ইমেইল দ্বারা ব্যবহারকারী সন্ধান করে
+// FetchUserByEmail ফাংশন ব্যবহারকারীর ইমেইল দ্বারা ব্যবহারকারী সন্ধান করে
+func FetchUserByEmail(email string) (*models.User, error) {
+    var user models.User
+    err := db.QueryRow("SELECT id, name, username, email, password, picture FROM users WHERE email = ?", email).Scan(&user.ID, &user.Name, &user.Username, &user.Email, &user.Password, &user.Picture) // picture যুক্ত করুন
+    if err != nil {
+        if err == sql.ErrNoRows {
+            return nil, nil // কোন ব্যবহারকারী পাওয়া যায়নি
+        }
+        return nil, err // অন্য একটি ত্রুটি ঘটেছে
+    }
+    return &user, nil
+}
+
+
+// InsertUser ফাংশন নতুন ব্যবহারকারী যুক্ত করে
+func InsertUser(user models.User) error {
+    _, err := db.Exec("INSERT INTO users (name, username, email, password, picture) VALUES (?, ?, ?, ?, ?)", user.Name, user.Username, user.Email, user.Password, user.Picture) // picture যুক্ত করুন
+    return err
+}
+
+// UpdateUser ফাংশন বিদ্যমান ব্যবহারকারী আপডেট করে
+// UpdateUser ফাংশন বিদ্যমান ব্যবহারকারী আপডেট করে
+func UpdateUser(id int, user models.User) error {
+    _, err := db.Exec("UPDATE users SET name = ?, username = ?, email = ?, password = ?, picture = ? WHERE id = ?", user.Name, user.Username, user.Email, user.Password, user.Picture, id) // picture যুক্ত করুন
+    return err
+}
+
+
+// DeleteUser ফাংশন ব্যবহারকারী ডিলিট করে
 func DeleteUser(id int) error {
     query := "DELETE FROM users WHERE id = ?"
     _, err := db.Exec(query, id)
     return err
 }
 
-// UpdateUser - ব্যবহারকারীর তথ্য আপডেট করার জন্য ফাংশন
-func UpdateUser(id int, user User) error {
-    query := "UPDATE users SET username = ?, email = ?, password = ?, picture = ? WHERE id = ?"
-    _, err := db.Exec(query, user.Username, user.Email, user.Password, user.Picture, id)
-    return err
+// SaveUserCategories ফাংশন ব্যবহারকারীর ক্যাটেগরিগুলি সংরক্ষণ করে
+func SaveUserCategories(userID int, categories []string) error {
+    // প্রথমে ক্যাটেগরি মুছে ফেলুন
+    _, err := db.Exec("DELETE FROM user_categories WHERE user_id = ?", userID)
+    if err != nil {
+        return err
+    }
+
+    // নতুন ক্যাটেগরি যোগ করুন
+    for _, category := range categories {
+        _, err = db.Exec("INSERT INTO user_categories (user_id, category) VALUES (?, ?)", userID, category)
+        if err != nil {
+            return err
+        }
+    }
+    return nil
+}
+
+// FetchUserCategories ফাংশন নির্দিষ্ট ব্যবহারকারীর জন্য ক্যাটেগরি সংগ্রহ করে
+func FetchUserCategories(userID int) ([]string, error) {
+    rows, err := db.Query("SELECT category FROM user_categories WHERE user_id = ?", userID)
+    if err != nil {
+        return nil, err
+    }
+    defer rows.Close()
+
+    var categories []string
+    for rows.Next() {
+        var category string
+        if err := rows.Scan(&category); err != nil {
+            return nil, err
+        }
+        categories = append(categories, category)
+    }
+    return categories, nil
+}
+// FetchUserByUsernameOrEmail retrieves a user by username or email from the database
+// FetchUserByUsernameOrEmail retrieves a user by username or email from the database
+func FetchUserByUsernameOrEmail(username, email string) (*models.User, error) {
+    var user models.User
+    query := "SELECT id, name, username, email, password, picture FROM users WHERE username = ? OR email = ?" // picture যুক্ত করুন
+    
+    err := db.QueryRow(query, username, email).Scan(&user.ID, &user.Name, &user.Username, &user.Email, &user.Password, &user.Picture) // picture যুক্ত করুন
+    if err != nil {
+        if err == sql.ErrNoRows {
+            return nil, errors.New("user not found")
+        }
+        return nil, err
+    }
+    
+    return &user, nil
 }

@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1>Register</h1>
+    </header>
+    <main>
+        <form id="registration-form" enctype="multipart/form-data">
+            <label for="name">নাম:</label>
+            <input type="text" id="name" required>
+        
+            <label for="username">ব্যবহারকারীর নাম:</label>
+            <input type="text" id="username" required>
+        
+            <label for="email">ইমেইল:</label>
+            <input type="email" id="email" required>
+        
+            <label for="password">পাসওয়ার্ড:</label>
+            <input type="password" id="password" required>
+        
+            <label for="picture">ছবি আপলোড করুন:</label>
+            <input type="file" id="picture" accept="image/*" required>
+        
+            <button type="submit">রেজিস্ট্রেশন করুন</button>
+        </form>
+    </main>
+    <script src="register.js"></script>
+</body>
+</html>
+
