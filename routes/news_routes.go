@@ -2,7 +2,7 @@ package routes
 
 import (
     "github.com/gorilla/mux"
-    "news_backend/controllers"
+    "github.com/imrezaulkrm/bartadhara/controllers"
 )
 
 func NewsRoutes(r *mux.Router) {

@@ -1,4 +1,4 @@
-module news_backend
+module github.com/imrezaulkrm/bartadhara
 
 go 1.23.1
 

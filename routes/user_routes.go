@@ -2,7 +2,7 @@ package routes
 
 import (
     "github.com/gorilla/mux"
-    "news_backend/controllers"
+    "github.com/imrezaulkrm/bartadhara/controllers"
 )
 
 // UserRoutes defines user-related routes

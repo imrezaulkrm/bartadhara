@@ -4,7 +4,7 @@ import (
     "github.com/gorilla/mux"
     "encoding/json"
     "net/http"
-    "news_backend/database"
+    "github.com/imrezaulkrm/bartadhara/database"
     "strconv"
 )
 

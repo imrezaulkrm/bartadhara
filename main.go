@@ -3,8 +3,8 @@ package main
 import (
     "log"
     "net/http"
-    "news_backend/database"
-    "news_backend/routes"
+    "github.com/imrezaulkrm/bartadhara/database"
+    "github.com/imrezaulkrm/bartadhara/routes"
     "github.com/gorilla/mux"
 )
 

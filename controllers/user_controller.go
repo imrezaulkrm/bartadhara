@@ -12,8 +12,8 @@ import (
     "github.com/gorilla/mux"
     "golang.org/x/crypto/bcrypt"
 
-    "news_backend/database"
-    "news_backend/models"
+    "github.com/imrezaulkrm/bartadhara/database"
+    "github.com/imrezaulkrm/bartadhara/models"
 )
 
 // UserController struct

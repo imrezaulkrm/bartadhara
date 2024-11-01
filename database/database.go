@@ -5,7 +5,7 @@ import (
     "log"
     "errors"
     _ "github.com/go-sql-driver/mysql" // MySQL ড্রাইভার
-    "news_backend/models"               // এখানে models প্যাকেজটি আমদানি করুন
+    "github.com/imrezaulkrm/bartadhara/models"               // এখানে models প্যাকেজটি আমদানি করুন
 )
 
 // DB ভেরিয়েবল ডেটাবেস সংযোগের জন্য

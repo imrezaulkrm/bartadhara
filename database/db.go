@@ -2,7 +2,7 @@ package database
 
 import (
     "log"
-    "news_backend/config"
+    "github.com/imrezaulkrm/bartadhara/config"
 
     "gorm.io/driver/mysql"
     "gorm.io/gorm"
