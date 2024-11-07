@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+        header {
+            background-color: #333;
+            color: #fff;
+            padding: 10px;
+            text-align: center;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+        button {
+            background-color: #28a745;
+            color: white;
+            padding: 5px 10px;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Admin Dashboard</h1>
+</header>
+
+<div style="margin: 20px;">
+    <button onclick="fetchAllAdmins()">Fetch All Admins</button>
+    <div id="admins-list">
+        <!-- Admin list will be displayed here -->
+    </div>
+</div>
+
+<script>
+    async function fetchAllAdmins() {
+        const response = await fetch('http://localhost:8080/admin');
+        const admins = await response.json();
+
+        let adminListHtml = `
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Username</th>
+                        <th>Email</th>
+                        <th>Picture</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+
+        admins.forEach(admin => {
+            adminListHtml += `
+                <tr>
+                    <td>${admin.id}</td>
+                    <td>${admin.name}</td>
+                    <td>${admin.username}</td>
+                    <td>${admin.email}</td>
+                    <td><img src="${admin.picture}" alt="Admin Image" width="50"></td>
+                    <td>
+                        <button onclick="deleteAdmin(${admin.id})">Delete</button>
+                    </td>
+                </tr>
+            `;
+        });
+
+        adminListHtml += '</tbody></table>';
+        document.getElementById('admins-list').innerHTML = adminListHtml;
+    }
+
+    async function deleteAdmin(adminId) {
+        const response = await fetch(`http://localhost:8080/admin/${adminId}`, {
+            method: 'DELETE',
+        });
+
+        if (response.ok) {
+            alert("Admin deleted successfully!");
+            fetchAllAdmins();
+        } else {
+            alert("Error deleting admin.");
+        }
+    }
+</script>
+
+</body>
+</html>

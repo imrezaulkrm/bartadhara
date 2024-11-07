@@ -26,12 +26,16 @@ func enableCORS(next http.Handler) http.Handler {
 }
 
 func main() {
-    database.ConnectDB() // ডেটাবেস কানেকশন
-    r := mux.NewRouter()
+    // ডেটাবেস কানেকশন
+    database.ConnectDB()
 
     // রাউট সেটআপ
+    r := mux.NewRouter()
+
+    // News, User এবং Admin রাউটস সেটআপ
     routes.NewsRoutes(r)
     routes.UserRoutes(r)
+    routes.AdminRoutes(r) // Admin রাউট যোগ করা
 
     // CORS middleware যুক্ত করে সার্ভার চালু করা
     log.Println("Starting server on :8080")
@@ -39,4 +43,3 @@ func main() {
         log.Fatal(err)
     }
 }
-

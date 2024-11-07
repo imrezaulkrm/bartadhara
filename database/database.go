@@ -32,6 +32,16 @@ type User struct {
     Picture  string `json:"picture"`
 }
 
+// Admin স্ট্রাক্ট
+type Admin struct {
+    ID       int    `json:"id"`
+    Name     string `json:"name"`
+    Username string `json:"username"`
+    Email    string `json:"email"`
+    Password string `json:"password"`
+    Picture  string `json:"picture"` // পিকচার ফিল্ড যুক্ত করুন
+}
+
 // ConnectDB ডেটাবেসের সাথে সংযোগ স্থাপন করে
 func ConnectDB() {
     var err error
@@ -45,6 +55,25 @@ func ConnectDB() {
         log.Fatal("Cannot connect to database:", err)
     }
     log.Println("Connected to database successfully")
+}
+// GetDB ফাংশন, যা ডাটাবেস কানেকশন রিটার্ন করবে
+func GetDB() *sql.DB {
+    return db
+}
+
+// saveAdminToDatabase saves the admin details into the database
+func SaveAdminToDatabase(admin models.Admin) error {
+	// এখানে db গ্লোবাল কানেকশন ব্যবহার করা হচ্ছে, নতুন কানেকশন খোলার প্রয়োজন নেই
+	query := `INSERT INTO admins (name, username, email, password, picture) VALUES (?, ?, ?, ?, ?)`
+
+	// ডাটাবেসে ইনসার্ট কোয়েরি চালান
+	_, err := db.Exec(query, admin.Name, admin.Username, admin.Email, admin.Password, admin.Picture)
+	if err != nil {
+		log.Println("Error inserting admin into the database: ", err)
+		return err
+	}
+
+	return nil
 }
 
 // UpdateUserCategories updates the categories for a specific user
@@ -291,4 +320,72 @@ func FetchUserByUsernameOrEmail(username, email string) (*models.User, error) {
     }
     
     return &user, nil
+}
+
+
+// ------------------------ Admin এর কাজ ------------------------
+
+// FetchAdminByUsername retrieves an admin by username from the database
+func FetchAdminByUsername(username string) (*Admin, error) {
+    var admin Admin
+    query := "SELECT id, name, username, email, password, picture FROM admins WHERE username = ?"
+    
+    err := db.QueryRow(query, username).Scan(&admin.ID, &admin.Name, &admin.Username, &admin.Email, &admin.Password, &admin.Picture)
+    if err != nil {
+        if err == sql.ErrNoRows {
+            return nil, errors.New("admin not found")
+        }
+        return nil, err
+    }
+    
+    return &admin, nil
+}
+
+// FetchAdminByEmail retrieves an admin by email from the database
+func FetchAdminByEmail(email string) (*Admin, error) {
+    var admin Admin
+    query := "SELECT id, name, username, email, password, picture FROM admins WHERE email = ?"
+    
+    err := db.QueryRow(query, email).Scan(&admin.ID, &admin.Name, &admin.Username, &admin.Email, &admin.Password, &admin.Picture)
+    if err != nil {
+        if err == sql.ErrNoRows {
+            return nil, nil // কোন অ্যাডমিন পাওয়া যায়নি
+        }
+        return nil, err // অন্য একটি ত্রুটি ঘটেছে
+    }
+    return &admin, nil
+}
+
+// InsertAdmin adds a new admin to the database
+func InsertAdmin(admin Admin) error {
+    _, err := db.Exec("INSERT INTO admins (name, username, email, password, picture) VALUES (?, ?, ?, ?, ?)", admin.Name, admin.Username, admin.Email, admin.Password, admin.Picture)
+    return err
+}
+
+// UpdateAdmin updates an existing admin's details
+func UpdateAdmin(id int, admin Admin) error {
+    _, err := db.Exec("UPDATE admins SET name = ?, username = ?, email = ?, password = ?, picture = ? WHERE id = ?", admin.Name, admin.Username, admin.Email, admin.Password, admin.Picture, id)
+    return err
+}
+
+// DeleteAdmin removes an admin from the database
+func DeleteAdmin(id int) error {
+    query := "DELETE FROM admins WHERE id = ?"
+    _, err := db.Exec(query, id)
+    return err
+}
+
+// FetchAdminByUsernameOrEmail fetches an admin by username or email
+func FetchAdminByUsernameOrEmail(username, email string) (models.Admin, error) {
+    var admin models.Admin
+    query := `SELECT id, name, username, email, password, picture FROM admins WHERE username = ? OR email = ?`
+    
+    err := db.QueryRow(query, username, email).Scan(&admin.ID, &admin.Name, &admin.Username, &admin.Email, &admin.Password, &admin.Picture)
+    if err != nil {
+        if err == sql.ErrNoRows {
+            return admin, errors.New("admin not found")
+        }
+        return admin, err
+    }
+    return admin, nil
 }
