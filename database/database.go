@@ -2,6 +2,7 @@ package database
 
 import (
     "database/sql"
+    "fmt"
     "log"
     "errors"
     _ "github.com/go-sql-driver/mysql" // MySQL ড্রাইভার
@@ -322,6 +323,33 @@ func FetchUserByUsernameOrEmail(username, email string) (*models.User, error) {
     return &user, nil
 }
 
+// UpdateUserPicture updates the user's picture URL in the database
+func UpdateUserPicture(userID int, pictureURL string) error {
+    // Construct the SQL query to update the user's picture
+    query := "UPDATE users SET picture = ? WHERE id = ?"
+
+    // Execute the query
+    result, err := db.Exec(query, pictureURL, userID)
+    if err != nil {
+        log.Println("Error updating user picture:", err)
+        return fmt.Errorf("error updating user picture: %v", err)
+    }
+
+    // Check how many rows were affected
+    rowsAffected, err := result.RowsAffected()
+    if err != nil {
+        log.Println("Error fetching rows affected:", err)
+        return fmt.Errorf("error fetching rows affected: %v", err)
+    }
+
+    if rowsAffected == 0 {
+        log.Println("No rows were updated.")
+    } else {
+        log.Printf("%d row(s) updated successfully.", rowsAffected)
+    }
+
+    return nil
+}
 
 // ------------------------ Admin এর কাজ ------------------------
 

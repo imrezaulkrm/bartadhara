@@ -32,6 +32,8 @@ func main() {
     // রাউট সেটআপ
     r := mux.NewRouter()
 
+    r.PathPrefix("/uploads/").Handler(http.StripPrefix("/uploads/", http.FileServer(http.Dir("./uploads/"))))
+
     // News, User এবং Admin রাউটস সেটআপ
     routes.NewsRoutes(r)
     routes.UserRoutes(r)

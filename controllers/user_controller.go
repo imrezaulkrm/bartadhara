@@ -1,21 +1,18 @@
 package controllers
 
 import (
-    "encoding/json"
-    //"errors"
-    "net/http"
-    "strconv"
     "log"
-    "path/filepath"
-    "os" // Added for file operations
-    "io" 
+    "encoding/json"
+    "fmt"
+    "io"
+    "net/http"
+    "os"
+    "strconv"
     "github.com/gorilla/mux"
     "golang.org/x/crypto/bcrypt"
-
-    "github.com/imrezaulkrm/bartadhara/database"
     "github.com/imrezaulkrm/bartadhara/models"
+    "github.com/imrezaulkrm/bartadhara/database"
 )
-
 // UserController struct
 type UserController struct{}
 
@@ -50,7 +47,7 @@ func (uc *UserController) FetchUserByID(w http.ResponseWriter, r *http.Request) 
     json.NewEncoder(w).Encode(user)
 }
 
-// InsertUser handles POST requests to create a new user
+// InsertUser handles user registration, picture upload, and data insertion
 func (uc *UserController) InsertUser(w http.ResponseWriter, r *http.Request) {
     // Parse multipart form
     err := r.ParseMultipartForm(10 << 20) // 10 MB limit
@@ -59,9 +56,9 @@ func (uc *UserController) InsertUser(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-    // Create uploads directory if it doesn't exist
-    if err := os.MkdirAll("uploads", os.ModePerm); err != nil {
-        http.Error(w, "Unable to create uploads directory", http.StatusInternalServerError)
+    // Create uploads/users directory if it doesn't exist
+    if err := os.MkdirAll("uploads/users", os.ModePerm); err != nil {
+        http.Error(w, "Unable to create uploads/users directory", http.StatusInternalServerError)
         return
     }
 
@@ -71,14 +68,16 @@ func (uc *UserController) InsertUser(w http.ResponseWriter, r *http.Request) {
     email := r.FormValue("email")
     password := r.FormValue("password")
 
-    // Check if an image file is uploaded
-    var picture string
+    // Handle file upload for the profile picture (added here)
+    var picturePath string
+    var imageURL string
     if file, _, err := r.FormFile("picture"); err == nil {
-        // Process the uploaded file
         defer file.Close()
-        picture = filepath.Join("uploads", username+"_profile.jpg") // Example path
 
-        out, err := os.Create(picture)
+        // File path with username
+        picturePath = fmt.Sprintf("uploads/users/%s.jpg", username)
+
+        out, err := os.Create(picturePath)
         if err != nil {
             http.Error(w, "Unable to create the file for writing", http.StatusInternalServerError)
             return
@@ -90,15 +89,18 @@ func (uc *UserController) InsertUser(w http.ResponseWriter, r *http.Request) {
             http.Error(w, "Error saving the file", http.StatusInternalServerError)
             return
         }
+
+        // Create the public URL for the image (assuming you want to access it via HTTP)
+        imageURL = fmt.Sprintf("http://localhost:8080/uploads/users/%s.jpg", username)
     }
 
-    // Create user model
+    // Create user model with the basic information, including picture URL
     user := models.User{
         Name:     name,
         Username: username,
         Email:    email,
         Password: password,
-        Picture:  picture, // Picture path included here
+        Picture:  imageURL, // Store the image URL in the database
     }
 
     // Validate user input
@@ -126,23 +128,17 @@ func (uc *UserController) InsertUser(w http.ResponseWriter, r *http.Request) {
     }
     user.Password = string(hashedPassword)
 
-    // Save user to the database
+    // Save the user to the database to generate an ID
     if err = database.InsertUser(user); err != nil {
         http.Error(w, err.Error(), http.StatusInternalServerError)
         return
     }
 
-    // Save selected categories (if any)
-    if len(user.Categories) > 0 {
-        if err = database.SaveUserCategories(user.ID, user.Categories); err != nil {
-            http.Error(w, "Error saving user categories", http.StatusInternalServerError)
-            return
-        }
-    }
-
+    // Send response back to the user
     w.WriteHeader(http.StatusCreated)
     json.NewEncoder(w).Encode(user)
 }
+
 
 
 // UpdateUser handles PUT requests to update a user

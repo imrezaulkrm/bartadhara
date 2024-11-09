@@ -157,67 +157,77 @@ func (ac *AdminController) Login(w http.ResponseWriter, r *http.Request) {
 
 // Register handles admin registration with picture upload
 func (ac *AdminController) Register(w http.ResponseWriter, r *http.Request) {
-	// Parse multipart form data
-	err := r.ParseMultipartForm(10 << 20) // Limit file size to 10MB
-	if err != nil {
-		http.Error(w, "Error parsing form", http.StatusBadRequest)
-		return
-	}
+    // Parse multipart form data
+    err := r.ParseMultipartForm(10 << 20) // Limit file size to 10MB
+    if err != nil {
+        http.Error(w, "Error parsing form", http.StatusBadRequest)
+        return
+    }
 
-	// Extract form values
-	name := r.FormValue("name")
-	username := r.FormValue("username")
-	email := r.FormValue("email")
-	password := r.FormValue("password")
+    // Extract form values
+    name := r.FormValue("name")
+    username := r.FormValue("username")
+    email := r.FormValue("email")
+    password := r.FormValue("password")
 
-	// Handle file upload
-	file, _, err := r.FormFile("picture")
-	if err != nil {
-		http.Error(w, "Error uploading file", http.StatusBadRequest)
-		return
-	}
-	defer file.Close()
+    // Handle file upload
+    file, _, err := r.FormFile("picture")
+    if err != nil {
+        http.Error(w, "Error uploading file", http.StatusBadRequest)
+        return
+    }
+    defer file.Close()
 
-	// Save the file to the server
-	filePath := fmt.Sprintf("./uploads/%s.jpg", username) // Store the file with the username
-	outFile, err := os.Create(filePath)
-	if err != nil {
-		http.Error(w, "Error saving file", http.StatusInternalServerError)
-		return
-	}
-	defer outFile.Close()
+    // Create the uploads/admins directory if it doesn't exist
+    if err := os.MkdirAll("uploads/admins", os.ModePerm); err != nil {
+        http.Error(w, "Unable to create directory for admin pictures", http.StatusInternalServerError)
+        return
+    }
 
-	_, err = io.Copy(outFile, file)
-	if err != nil {
-		http.Error(w, "Error saving file", http.StatusInternalServerError)
-		return
-	}
+    // Save the file to the server in the uploads/admins folder
+    filePath := fmt.Sprintf("uploads/admins/%s.jpg", username) // Store the file with the username
+    outFile, err := os.Create(filePath)
+    if err != nil {
+        http.Error(w, "Error saving file", http.StatusInternalServerError)
+        return
+    }
+    defer outFile.Close()
 
-	// Hash the password
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-	if err != nil {
-		http.Error(w, "Error hashing password", http.StatusInternalServerError)
-		return
-	}
+    // Copy the uploaded file to the server
+    _, err = io.Copy(outFile, file)
+    if err != nil {
+        http.Error(w, "Error saving file", http.StatusInternalServerError)
+        return
+    }
 
-	// Create an admin object with hashed password
-	admin := models.Admin{
-		Name:     name,
-		Username: username,
-		Email:    email,
-		Password: string(hashedPassword), // Store the hashed password
-		Picture:  filePath,               // Store the file path in the admin object
-	}
+    // Create the public URL for the image (assuming you want to access it via HTTP)
+    imageURL := fmt.Sprintf("http://localhost:8080/uploads/admins/%s.jpg", username) // URL to access the image
 
-	// Save admin to the database using the database package
-	err = database.SaveAdminToDatabase(admin)
-	if err != nil {
-		http.Error(w, "Error saving admin to database", http.StatusInternalServerError)
-		return
-	}
+    // Hash the password
+    hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+    if err != nil {
+        http.Error(w, "Error hashing password", http.StatusInternalServerError)
+        return
+    }
 
-	// Send success response
-	response := map[string]string{"message": "Admin registered successfully"}
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
+    // Create an admin object with hashed password and picture URL
+    admin := models.Admin{
+        Name:     name,
+        Username: username,
+        Email:    email,
+        Password: string(hashedPassword), // Store the hashed password
+        Picture:  imageURL,               // Store the image URL in the database
+    }
+
+    // Save admin to the database using the database package
+    err = database.SaveAdminToDatabase(admin)
+    if err != nil {
+        http.Error(w, "Error saving admin to database", http.StatusInternalServerError)
+        return
+    }
+
+    // Send success response
+    response := map[string]string{"message": "Admin registered successfully"}
+    w.Header().Set("Content-Type", "application/json")
+    json.NewEncoder(w).Encode(response)
 }
