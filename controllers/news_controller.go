@@ -5,7 +5,12 @@ import (
     "encoding/json"
     "net/http"
     "github.com/imrezaulkrm/bartadhara/database"
+    //"github.com/imrezaulkrm/bartadhara/models"
     "strconv"
+    "fmt"
+    "os"
+    "io"
+    "time"
 )
 
 // সমস্ত নিউজ ফেচ করার জন্য ফাংশন
@@ -36,19 +41,84 @@ func GetNewsByID(w http.ResponseWriter, r *http.Request) {
     json.NewEncoder(w).Encode(news)
 }
 
-// নতুন নিউজ তৈরি করার জন্য ফাংশন
+
 func CreateNews(w http.ResponseWriter, r *http.Request) {
-    var news database.News
-    if err := json.NewDecoder(r.Body).Decode(&news); err != nil {
-        http.Error(w, err.Error(), http.StatusBadRequest)
+    // Parse form data
+    err := r.ParseMultipartForm(10 << 20) // 10 MB limit
+    if err != nil {
+        http.Error(w, "Unable to parse form", http.StatusBadRequest)
         return
     }
-    if err := database.InsertNews(news); err != nil {
-        http.Error(w, err.Error(), http.StatusInternalServerError)
+
+    // Retrieve news details from form
+    title := r.FormValue("title")
+    description := r.FormValue("description")
+    category := r.FormValue("category")
+    date := r.FormValue("date")
+
+    // Handle file upload for the news image
+    var imageURL string
+    if file, _, err := r.FormFile("image"); err == nil {
+        defer file.Close()
+
+        // Generate a unique image name using title and date
+        // Format: "title-YYYY-MM-DD.jpg"
+        imageName := fmt.Sprintf("%s-%s.jpg", title, date)
+
+        // File path with the generated image name
+        imagePath := fmt.Sprintf("uploads/news/%s", imageName)
+        
+        // Ensure the directory exists
+        if err := os.MkdirAll("uploads/news", os.ModePerm); err != nil {
+            http.Error(w, "Unable to create uploads/news directory", http.StatusInternalServerError)
+            return
+        }
+
+        // Create the file for saving
+        out, err := os.Create(imagePath)
+        if err != nil {
+            http.Error(w, "Unable to create the file for writing", http.StatusInternalServerError)
+            return
+        }
+        defer out.Close()
+
+        // Save the uploaded image file
+        if _, err = io.Copy(out, file); err != nil {
+            http.Error(w, "Error saving the file", http.StatusInternalServerError)
+            return
+        }
+
+        // Set image URL for accessing the file
+        imageURL = fmt.Sprintf("http://localhost:8080/%s", imagePath)
+    }
+
+    // Parse and validate date
+    parsedDate, err := time.Parse("2006-01-02", date)
+    if err != nil {
+        http.Error(w, "Invalid date format. Use YYYY-MM-DD", http.StatusBadRequest)
         return
     }
+
+    // Create news model
+    news := database.News{ // Use database.News instead of models.News
+        Title:       title,
+        Description: description,
+        Image:       imageURL,
+        Category:    category,
+        Date:        parsedDate.Format("2006-01-02"),
+    }
+
+    // Insert news into the database
+    if err = database.InsertNews(news); err != nil {
+        http.Error(w, "Failed to insert news", http.StatusInternalServerError)
+        return
+    }
+
+    // Send success response
     w.WriteHeader(http.StatusCreated)
+    json.NewEncoder(w).Encode(news)
 }
+
 
 // নিউজ আপডেট করার জন্য ফাংশন
 func UpdateNews(w http.ResponseWriter, r *http.Request) {
