@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Update News</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            width: 50%;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .container h2 {
+            text-align: center;
+        }
+        .input-group {
+            margin-bottom: 15px;
+        }
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        .input-group input,
+        .input-group textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .input-group textarea {
+            resize: vertical;
+            height: 100px;
+        }
+        .btn {
+            padding: 10px 15px;
+            background-color: #28A745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+        }
+        .btn:hover {
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container" id="update-container">
+        <h2>Update News</h2>
+        <form id="update-form">
+            <div class="input-group">
+                <label for="title">Title</label>
+                <input type="text" id="title" name="title" required>
+            </div>
+            <div class="input-group">
+                <label for="description">Description</label>
+                <textarea id="description" name="description" required></textarea>
+            </div>
+            <div class="input-group">
+                <label for="category">Category</label>
+                <input type="text" id="category" name="category" required>
+            </div>
+            <div class="input-group">
+                <label for="date">Date (YYYY-MM-DD)</label>
+                <input type="date" id="date" name="date" required>
+            </div>
+            <div class="input-group">
+                <label for="image">Image</label>
+                <input type="file" id="image" name="image">
+            </div>
+            <button type="submit" class="btn">Update News</button>
+        </form>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const newsID = urlParams.get('id');
+
+        // Fetch the news data to update
+        fetch(`http://localhost:8080/news/${newsID}`)
+            .then(response => response.json())
+            .then(news => {
+                document.getElementById('title').value = news.title;
+                document.getElementById('description').value = news.description;
+                document.getElementById('category').value = news.category;
+                document.getElementById('date').value = news.date;
+            })
+            .catch(error => console.error('Error fetching news:', error));
+
+        // Handle form submission to update news
+        document.getElementById('update-form').addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            const title = document.getElementById('title').value;
+            const description = document.getElementById('description').value;
+            const category = document.getElementById('category').value;
+            const date = document.getElementById('date').value;
+            const image = document.getElementById('image').files[0];
+
+            const formData = new FormData();
+            formData.append('title', title);
+            formData.append('description', description);
+            formData.append('category', category);
+            formData.append('date', date);
+            if (image) {
+                formData.append('image', image);
+            }
+
+            fetch(`http://localhost:8080/news/${newsID}`, {
+                method: 'PUT',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(updatedNews => {
+                alert('News updated successfully!');
+                window.location.href = 'index.html';  // Redirect to news list page
+            })
+            .catch(error => console.error('Error updating news:', error));
+        });
+    </script>
+
+</body>
+</html>

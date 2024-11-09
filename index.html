@@ -5,6 +5,110 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>News App</title>
     <link rel="stylesheet" href="styles.css">
+    <style>
+        /* styles.css */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+
+        header {
+            background-color: #333;
+            color: white;
+            padding: 15px;
+            text-align: center;
+        }
+
+        header nav {
+            margin-top: 10px;
+        }
+
+        header nav a {
+            color: white;
+            margin: 0 15px;
+            text-decoration: none;
+            font-size: 16px;
+        }
+
+        #user-info {
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #user-info img {
+            margin-right: 10px;
+        }
+
+        #filters {
+            margin: 20px;
+        }
+
+        #category-filters {
+            display: flex;
+            flex-wrap: wrap;
+        }
+
+        #category-filters label {
+            margin: 5px 15px;
+        }
+
+        #news-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-around;
+            padding: 20px;
+        }
+
+        .news-item {
+            background-color: white;
+            width: 30%;
+            margin: 10px;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .news-item img {
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+        }
+
+        .news-item h2 {
+            font-size: 18px;
+            margin: 15px 0;
+        }
+
+        .news-item p {
+            font-size: 14px;
+            color: #555;
+        }
+
+        .news-item .description {
+            display: -webkit-box;
+            -webkit-box-orient: vertical;
+            -webkit-line-clamp: 2;
+            overflow: hidden;
+        }
+
+        .news-item .see-more {
+            color: blue;
+            text-decoration: underline;
+            cursor: pointer;
+        }
+
+        .news-item .footer {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+            font-size: 12px;
+            color: #777;
+        }
+    </style>
 </head>
 <body>
     <header>
@@ -32,3 +136,4 @@
     <script src="script.js"></script>
 </body>
 </html>
+

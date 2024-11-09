@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>News List</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            width: 80%;
+            margin: 20px auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+        }
+        .news-box {
+            background-color: white;
+            border: 1px solid #ddd;
+            padding: 15px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .news-box img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            border-radius: 5px;
+        }
+        .news-box h3 {
+            font-size: 20px;
+            margin: 10px 0;
+        }
+        .news-box p {
+            font-size: 14px;
+            color: #555;
+        }
+        .buttons {
+            display: flex;
+            justify-content: space-between;
+        }
+        .btn {
+            padding: 8px 12px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .btn.delete {
+            background-color: #DC3545;
+        }
+        .btn.update {
+            background-color: #28A745;
+        }
+        .btn:hover {
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container" id="news-container">
+        <!-- News Items will be injected here -->
+    </div>
+
+    <script>
+        // Fetch news from the backend API and display them
+        fetch('http://localhost:8080/news') // Assuming your backend API is running on this URL
+            .then(response => response.json())
+            .then(newsList => {
+                const newsContainer = document.getElementById('news-container');
+                newsList.forEach(news => {
+                    const newsBox = document.createElement('div');
+                    newsBox.classList.add('news-box');
+
+                    newsBox.innerHTML = `
+                        <img src="${news.image}" alt="News Image">
+                        <h3>${news.title}</h3>
+                        <p>${news.description}</p>
+                        <div class="buttons">
+                            <button class="btn delete" onclick="deleteNews(${news.id})">Delete</button>
+                            <button class="btn update" onclick="updateNews(${news.id})">Update</button>
+                        </div>
+                    `;
+
+                    newsContainer.appendChild(newsBox);
+                });
+            })
+            .catch(error => console.error('Error fetching news:', error));
+
+        // Function to delete a news item
+        function deleteNews(newsID) {
+            if (confirm("Are you sure you want to delete this news?")) {
+                fetch(`http://localhost:8080/news/${newsID}`, {
+                    method: 'DELETE'
+                })
+                .then(response => {
+                    if (response.ok) {
+                        alert('News deleted successfully!');
+                        location.reload();  // Reload the page to reflect the change
+                    } else {
+                        alert('Error deleting news');
+                    }
+                })
+                .catch(error => console.error('Error deleting news:', error));
+            }
+        }
+
+        // Function to navigate to the update page
+        function updateNews(newsID) {
+            window.location.href = `update_news.html?id=${newsID}`;
+        }
+    </script>
+
+</body>
+</html>

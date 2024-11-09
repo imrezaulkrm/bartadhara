@@ -154,10 +154,18 @@ func InsertNews(news News) error {
 }
 
 // নিউজ আপডেট করার জন্য ফাংশন
-func UpdateNews(id int, news News) error {
-    query := "UPDATE news SET title = ?, description = ?, image = ?, category = ?, date = ? WHERE id = ?"
-    _, err := db.Exec(query, news.Title, news.Description, news.Image, news.Category, news.Date, id)
-    return err
+func UpdateNews(newsID string, updatedNews models.News) error {
+    // SQL কুয়েরি তৈরি করুন
+    query := `UPDATE news SET title = ?, description = ?, image = ?, category = ?, date = ? WHERE id = ?`
+
+    // ডেটাবেসে নিউজ আপডেট করুন
+    _, err := db.Exec(query, updatedNews.Title, updatedNews.Description, updatedNews.Image, updatedNews.Category, updatedNews.Date, newsID)
+    if err != nil {
+        log.Printf("Error updating news with ID %s: %v", newsID, err)
+        return fmt.Errorf("could not update news: %v", err)
+    }
+
+    return nil
 }
 
 // নিউজ ডিলিট করার জন্য ফাংশন
@@ -165,6 +173,27 @@ func DeleteNews(id int) error {
     query := "DELETE FROM news WHERE id = ?"
     _, err := db.Exec(query, id)
     return err
+}
+
+// GetNewsByID retrieves a single news entry from the database by ID
+func GetNewsByID(newsID string) (*models.News, error) {
+    // Create a new empty News model
+    var news models.News
+
+    // Query to fetch news by ID
+    query := "SELECT id, title, description, image, category, date FROM news WHERE id = ?"
+
+    // Execute the query
+    err := db.QueryRow(query, newsID).Scan(&news.ID, &news.Title, &news.Description, &news.Image, &news.Category, &news.Date)
+    if err != nil {
+        if err == sql.ErrNoRows {
+            return nil, nil // No rows found, return nil
+        }
+        return nil, err // Return the error if something went wrong
+    }
+
+    // Return the news entry
+    return &news, nil
 }
 
 // ------------------------ ইউজারের কাজ শুরু হচ্ছে ------------------------

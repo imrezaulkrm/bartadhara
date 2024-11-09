@@ -8,13 +8,13 @@ document.addEventListener('DOMContentLoaded', () => {
     let newsData = [];
     let selectedCategories = [];
 
-    // ফেক ইউজার ডেটা (সাধারণত এটি সার্ভার থেকে আসবে)
-    const user = JSON.parse(localStorage.getItem('user')); // লগইন করা ইউজারের তথ্য
+    // Fake user data (Normally this would come from the server)
+    const user = JSON.parse(localStorage.getItem('user')); // Logged-in user info
 
     if (user) {
-        userName.textContent = user.name; // ইউজারের নাম দেখানো
-        userPicture.src = user.picture; // ইউজারের ছবি দেখানো
-        userInfo.style.display = 'flex'; // ইউজার তথ্য দেখানো
+        userName.textContent = user.name; // Show the user's name
+        userPicture.src = user.picture; // Show the user's picture
+        userInfo.style.display = 'flex'; // Display user info
     }
 
     async function loadNews() {
@@ -34,7 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderNews(filteredNews) {
-        newsContainer.innerHTML = ''; // পূর্ববর্তী নিউজ ক্লিয়ার করা
+        newsContainer.innerHTML = ''; // Clear previous news
 
         if (filteredNews.length === 0) {
             newsContainer.innerHTML = '<p>No news available for the selected category.</p>';
@@ -46,11 +46,14 @@ document.addEventListener('DOMContentLoaded', () => {
             newsItem.classList.add('news-item');
 
             newsItem.innerHTML = `
-                <h2>${news.title}</h2>
                 <img src="${news.image}" alt="${news.title}" onerror="this.onerror=null; this.src='fallback-image.jpg';">
-                <p>${news.description}</p>
-                <p><strong>Category:</strong> ${news.category}</p>
-                <p><strong>Date:</strong> ${news.date}</p>
+                <h2>${news.title}</h2>
+                <p class="description">${news.description}</p>
+                <span class="see-more" onclick="viewNewsDetails('${news.id}')">See more</span>
+                <div class="footer">
+                    <span>${news.date}</span>
+                    <span>${news.category}</span>
+                </div>
             `;
 
             newsContainer.appendChild(newsItem);
@@ -58,8 +61,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderCategoryFilters(newsData) {
-        const categories = [...new Set(newsData.map(news => news.category))]; // ইউনিক ক্যাটাগরি এক্সট্র্যাক্ট করা
-        categoryFilters.innerHTML = ''; // পূর্ববর্তী ফিল্টার ক্লিয়ার করা
+        const categories = [...new Set(newsData.map(news => news.category))]; // Extract unique categories
+        categoryFilters.innerHTML = ''; // Clear previous filters
 
         categories.forEach(category => {
             const label = document.createElement('label');
@@ -76,11 +79,16 @@ document.addEventListener('DOMContentLoaded', () => {
         selectedCategories = Array.from(categoryFilters.querySelectorAll('input[type="checkbox"]:checked')).map(checkbox => checkbox.value);
         
         if (selectedCategories.length === 0) {
-            renderNews(newsData); // কোনো ক্যাটাগরি নির্বাচিত না হলে সমস্ত নিউজ দেখানো
+            renderNews(newsData); // Show all news if no category is selected
         } else {
             const filteredNews = newsData.filter(news => selectedCategories.includes(news.category));
             renderNews(filteredNews);
         }
+    }
+
+    function viewNewsDetails(newsID) {
+        console.log("Navigating to news details with ID:", newsID); // Log newsID for debugging
+        window.location.href = `news-details.html?id=${newsID}`; // Navigate to the news details page
     }
 
     loadNews();
