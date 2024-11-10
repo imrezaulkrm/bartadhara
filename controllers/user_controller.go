@@ -2,6 +2,7 @@ package controllers
 
 import (
     "log"
+    //"path/filepath"  // Add this import
     "encoding/json"
     "fmt"
     "io"
@@ -139,42 +140,106 @@ func (uc *UserController) InsertUser(w http.ResponseWriter, r *http.Request) {
     json.NewEncoder(w).Encode(user)
 }
 
-
-
 // UpdateUser handles PUT requests to update a user
+// UpdateUser handles updating user information by ID
+// UpdateUser updates user details
 func (uc *UserController) UpdateUser(w http.ResponseWriter, r *http.Request) {
-    idStr := r.URL.Query().Get("id")
-    id, err := strconv.Atoi(idStr)
+    userIDStr := mux.Vars(r)["id"]
+    
+    userID, err := strconv.Atoi(userIDStr)
     if err != nil {
-        http.Error(w, "Invalid ID", http.StatusBadRequest)
+        http.Error(w, "Invalid user ID format", http.StatusBadRequest)
         return
     }
 
-    var user models.User
-    err = json.NewDecoder(r.Body).Decode(&user)
+    // Parse form data
+    err = r.ParseMultipartForm(10 << 20)
     if err != nil {
-        http.Error(w, err.Error(), http.StatusBadRequest)
+        http.Error(w, "Unable to parse form", http.StatusBadRequest)
         return
     }
 
-    // Hash the password if provided
-    if user.Password != "" {
-        hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
+    // Retrieve updated details
+    name := r.FormValue("name")
+    username := r.FormValue("username")
+    email := r.FormValue("email")
+    password := r.FormValue("password")
+
+    var pictureURL string
+    if file, _, err := r.FormFile("picture"); err == nil {
+        defer file.Close()
+
+        // Handle picture upload
+        picturePath := fmt.Sprintf("uploads/users/%d.jpg", userID)
+        if err := os.MkdirAll("uploads/users", os.ModePerm); err != nil {
+            http.Error(w, "Unable to create uploads directory", http.StatusInternalServerError)
+            return
+        }
+
+        out, err := os.Create(picturePath)
+        if err != nil {
+            http.Error(w, "Unable to create file for saving", http.StatusInternalServerError)
+            return
+        }
+        defer out.Close()
+        if _, err = io.Copy(out, file); err != nil {
+            http.Error(w, "Error saving the file", http.StatusInternalServerError)
+            return
+        }
+
+        pictureURL = fmt.Sprintf("http://localhost:8080/%s", picturePath)
+    }
+
+    // Fetch existing user data
+    existingUser, err := database.FetchUserByID(userID)
+    if err != nil {
+        http.Error(w, "User not found", http.StatusNotFound)
+        return
+    }
+
+    // Update only the fields provided
+    if name == "" {
+        name = existingUser.Name
+    }
+    if username == "" {
+        username = existingUser.Username
+    }
+    if email == "" {
+        email = existingUser.Email
+    }
+    if password == "" {
+        password = existingUser.Password
+    }
+
+    // Hash password if changed
+    if password != existingUser.Password {
+        hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
         if err != nil {
             http.Error(w, "Error hashing password", http.StatusInternalServerError)
             return
         }
-        user.Password = string(hashedPassword)
+        password = string(hashedPassword)
     }
 
-    err = database.UpdateUser(id, user)
-    if err != nil {
-        http.Error(w, err.Error(), http.StatusInternalServerError)
+    // Update user data
+    updatedUser := models.User{
+        Name:     name,
+        Username: username,
+        Email:    email,
+        Password: password,
+        Picture:  pictureURL,
+    }
+
+    if err := database.UpdateUser(userID, updatedUser); err != nil {
+        http.Error(w, "Failed to update user", http.StatusInternalServerError)
         return
     }
 
-    w.WriteHeader(http.StatusNoContent)
+    // Send the updated user in the response
+    w.WriteHeader(http.StatusOK)
+    json.NewEncoder(w).Encode(updatedUser)
 }
+
 
 // DeleteUser handles DELETE requests to remove a user
 func (uc *UserController) DeleteUser(w http.ResponseWriter, r *http.Request) {

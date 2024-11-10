@@ -4,7 +4,6 @@ import (
     "errors"
     "regexp"
 )
-
 // Admin স্ট্রাকচার
 type Admin struct {
     ID       int    `json:"id"`
@@ -14,7 +13,6 @@ type Admin struct {
     Password string `json:"password"`
     Picture  string `json:"picture"`
 }
-
 // Validate ফাংশন এডমিনের ইনপুট যাচাই করে
 func (a *Admin) Validate() error {
     // নামের ভ্যালিডেশন
@@ -39,7 +37,6 @@ func (a *Admin) Validate() error {
 
     return nil
 }
-
 // isValidEmail ফাংশন ইমেইল ঠিক কিনা যাচাই করে
 func isValidAdminEmail(email string) bool {
     regex := `^[a-zA-Z0-9._%+-]+@[a-zAZ0-9.-]+\.[a-zA-Z]{2,}$`
