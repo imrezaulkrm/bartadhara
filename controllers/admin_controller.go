@@ -11,6 +11,7 @@ import (
 	"os"
 	"fmt"
 	"log"
+	"time"
 )
 
 // AdminController struct
@@ -116,7 +117,10 @@ func (ac *AdminController) UpdateAdmin(w http.ResponseWriter, r *http.Request) {
         defer file.Close()
 
         // Create the directory for storing the uploaded image
-        picturePath := fmt.Sprintf("uploads/admins/%s.jpg", adminID)
+        currentDate := time.Now().Format("2006-01-02") // Get current date in yyyy-mm-dd format
+        pictureFileName := fmt.Sprintf("%s-%s-%s.jpg", name, currentDate, adminID) // Generate the picture file name
+        picturePath := fmt.Sprintf("uploads/admins/%s", pictureFileName)
+
         if err := os.MkdirAll("uploads/admins", os.ModePerm); err != nil {
             http.Error(w, "Unable to create uploads directory", http.StatusInternalServerError)
             return
@@ -193,8 +197,6 @@ func (ac *AdminController) UpdateAdmin(w http.ResponseWriter, r *http.Request) {
     json.NewEncoder(w).Encode(updatedAdmin)
 }
 
-
-
 // DeleteAdmin - Delete admin by ID
 func (ac *AdminController) DeleteAdmin(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
@@ -240,8 +242,6 @@ func (ac *AdminController) Login(w http.ResponseWriter, r *http.Request) {
     w.WriteHeader(http.StatusOK)
     json.NewEncoder(w).Encode(dbAdmin)
 }
-
-
 
 // Register handles admin registration with picture upload
 func (ac *AdminController) Register(w http.ResponseWriter, r *http.Request) {

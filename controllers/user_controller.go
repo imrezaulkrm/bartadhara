@@ -2,6 +2,7 @@ package controllers
 
 import (
     "log"
+    "time"
     //"path/filepath"  // Add this import
     "encoding/json"
     "fmt"
@@ -140,8 +141,6 @@ func (uc *UserController) InsertUser(w http.ResponseWriter, r *http.Request) {
     json.NewEncoder(w).Encode(user)
 }
 
-// UpdateUser handles PUT requests to update a user
-// UpdateUser handles updating user information by ID
 // UpdateUser updates user details
 func (uc *UserController) UpdateUser(w http.ResponseWriter, r *http.Request) {
     userIDStr := mux.Vars(r)["id"]
@@ -179,7 +178,10 @@ func (uc *UserController) UpdateUser(w http.ResponseWriter, r *http.Request) {
         defer file.Close()
 
         // Handle picture upload
-        picturePath := fmt.Sprintf("uploads/users/%d.jpg", userID)
+        currentDate := time.Now().Format("2006-01-02") // Get current date in yyyy-mm-dd format
+        pictureFileName := fmt.Sprintf("%s-%s-%d.jpg", name, currentDate, userID) // Generate picture file name
+        picturePath := fmt.Sprintf("uploads/users/%s", pictureFileName)
+
         if err := os.MkdirAll("uploads/users", os.ModePerm); err != nil {
             http.Error(w, "Unable to create uploads directory", http.StatusInternalServerError)
             return
@@ -244,7 +246,6 @@ func (uc *UserController) UpdateUser(w http.ResponseWriter, r *http.Request) {
     w.WriteHeader(http.StatusOK)
     json.NewEncoder(w).Encode(updatedUser)
 }
-
 
 // DeleteUser handles DELETE requests to remove a user
 func (uc *UserController) DeleteUser(w http.ResponseWriter, r *http.Request) {
