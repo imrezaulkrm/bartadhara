@@ -166,6 +166,15 @@ func (uc *UserController) UpdateUser(w http.ResponseWriter, r *http.Request) {
     password := r.FormValue("password")
 
     var pictureURL string
+
+    // Fetch existing user data
+    existingUser, err := database.FetchUserByID(userID)
+    if err != nil {
+        http.Error(w, "User not found", http.StatusNotFound)
+        return
+    }
+
+    // Check if a new picture is uploaded
     if file, _, err := r.FormFile("picture"); err == nil {
         defer file.Close()
 
@@ -188,13 +197,9 @@ func (uc *UserController) UpdateUser(w http.ResponseWriter, r *http.Request) {
         }
 
         pictureURL = fmt.Sprintf("http://localhost:8080/%s", picturePath)
-    }
-
-    // Fetch existing user data
-    existingUser, err := database.FetchUserByID(userID)
-    if err != nil {
-        http.Error(w, "User not found", http.StatusNotFound)
-        return
+    } else {
+        // If no new picture uploaded, retain existing picture
+        pictureURL = existingUser.Picture
     }
 
     // Update only the fields provided
