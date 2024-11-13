@@ -62,7 +62,7 @@ func (ac *AdminController) FetchAdminByID(w http.ResponseWriter, r *http.Request
 }
 
 // InsertAdmin - Insert new admin
-func (ac *AdminController) InsertAdmin(w http.ResponseWriter, r *http.Request) {
+/*func (ac *AdminController) InsertAdmin(w http.ResponseWriter, r *http.Request) {
 	var admin models.Admin
 	decoder := json.NewDecoder(r.Body)
 	if err := decoder.Decode(&admin); err != nil {
@@ -81,31 +81,119 @@ func (ac *AdminController) InsertAdmin(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(admin)
-}
+}*/
 
-// UpdateAdmin - Update existing admin
+// UpdateAdmin - Update existing admin details
 func (ac *AdminController) UpdateAdmin(w http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
-	adminID := params["id"]
-	var admin models.Admin
-	decoder := json.NewDecoder(r.Body)
-	if err := decoder.Decode(&admin); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
+    // Retrieve the admin ID from the URL parameters
+    params := mux.Vars(r)
+    adminID := params["id"]
 
-	// Update admin in the database
-	db := database.GetDB()
-	query := "UPDATE admins SET name = ?, username = ?, email = ?, password = ?, picture = ? WHERE id = ?"
-	_, err := db.Exec(query, admin.Name, admin.Username, admin.Email, admin.Password, admin.Picture, adminID)
-	if err != nil {
-		http.Error(w, "Error updating admin", http.StatusInternalServerError)
-		return
-	}
+    // Parse the form data (allowing for file uploads)
+    err := r.ParseMultipartForm(10 << 20) // 10MB limit for file uploads
+    if err != nil {
+        http.Error(w, "Unable to parse form", http.StatusBadRequest)
+        return
+    }
 
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(admin)
+    // Retrieve form values for the admin details
+    name := r.FormValue("name")
+    username := r.FormValue("username")
+    email := r.FormValue("email")
+    password := r.FormValue("password")
+
+    var pictureURL string
+
+    // Fetch the existing admin data from the database
+    existingAdmin, err := database.FetchAdminByID(adminID)
+    if err != nil {
+        http.Error(w, "Admin not found", http.StatusNotFound)
+        return
+    }
+
+    // Check if a new picture is uploaded
+    if file, _, err := r.FormFile("picture"); err == nil {
+        defer file.Close()
+
+        // Create the directory for storing the uploaded image
+        picturePath := fmt.Sprintf("uploads/admins/%s.jpg", adminID)
+        if err := os.MkdirAll("uploads/admins", os.ModePerm); err != nil {
+            http.Error(w, "Unable to create uploads directory", http.StatusInternalServerError)
+            return
+        }
+
+        // Save the uploaded file to disk
+        out, err := os.Create(picturePath)
+        if err != nil {
+            http.Error(w, "Unable to create file for saving", http.StatusInternalServerError)
+            return
+        }
+        defer out.Close()
+
+        // Copy the content of the uploaded file into the new file
+        if _, err = io.Copy(out, file); err != nil {
+            http.Error(w, "Error saving the file", http.StatusInternalServerError)
+            return
+        }
+
+        // Set the picture URL (publicly accessible location)
+        pictureURL = fmt.Sprintf("http://localhost:8080/%s", picturePath)
+    } else {
+        // If no new picture uploaded, retain the existing picture URL
+        pictureURL = existingAdmin.Picture
+    }
+
+    // Update fields if new values are provided, otherwise keep the old values
+    if name == "" {
+        name = existingAdmin.Name
+    }
+    if username == "" {
+        username = existingAdmin.Username
+    }
+    if email == "" {
+        email = existingAdmin.Email
+    }
+    if password == "" {
+        password = existingAdmin.Password
+    }
+
+    // Hash password if it was changed
+    if password != existingAdmin.Password {
+        hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+        if err != nil {
+            http.Error(w, "Error hashing password", http.StatusInternalServerError)
+            return
+        }
+        password = string(hashedPassword)
+    }
+
+    // Update the admin in the database with only the fields that changed
+    db := database.GetDB()
+
+    // Prepare the update query with conditionals to only update the fields that changed
+    query := "UPDATE admins SET name = ?, username = ?, email = ?, password = ?, picture = ? WHERE id = ?"
+    _, err = db.Exec(query, name, username, email, password, pictureURL, adminID)
+    if err != nil {
+        http.Error(w, "Error updating admin", http.StatusInternalServerError)
+        return
+    }
+
+    // Create updated admin object for response
+    updatedAdmin := models.Admin{
+        ID:       existingAdmin.ID,
+        Name:     name,
+        Username: username,
+        Email:    email,
+        Password: password,  // Note: You might not want to send password in the response
+        Picture:  pictureURL,
+    }
+
+    // Send the updated admin details in the response
+    w.WriteHeader(http.StatusOK)
+    json.NewEncoder(w).Encode(updatedAdmin)
 }
+
+
 
 // DeleteAdmin - Delete admin by ID
 func (ac *AdminController) DeleteAdmin(w http.ResponseWriter, r *http.Request) {

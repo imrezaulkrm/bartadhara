@@ -446,3 +446,24 @@ func FetchAdminByUsernameOrEmail(username, email string) (models.Admin, error) {
     }
     return admin, nil
 }
+
+// FetchAdminByID retrieves admin details by ID from the database
+func FetchAdminByID(adminID string) (models.Admin, error) {
+    db := GetDB()
+    var admin models.Admin
+
+    query := "SELECT id, name, username, email, password, picture FROM admins WHERE id = ?"
+    row := db.QueryRow(query, adminID)
+
+    err := row.Scan(&admin.ID, &admin.Name, &admin.Username, &admin.Email, &admin.Password, &admin.Picture)
+    if err != nil {
+        if err == sql.ErrNoRows {
+            log.Printf("No admin found with ID: %s", adminID)  // Debug log
+            return admin, errors.New("admin not found")
+        }
+        log.Printf("Error fetching admin by ID: %v", err)  // Debug log for other errors
+        return admin, err
+    }
+
+    return admin, nil
+}

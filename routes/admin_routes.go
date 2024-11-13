@@ -12,7 +12,7 @@ func AdminRoutes(r *mux.Router) {
     // Admin related routes
     r.HandleFunc("/admin", ac.FetchAllAdmins).Methods("GET") // Get all admins
     r.HandleFunc("/admin/{id}", ac.FetchAdminByID).Methods("GET") // Get an admin by ID
-    r.HandleFunc("/admin", ac.InsertAdmin).Methods("POST") // Admin registration route
+    //r.HandleFunc("/admin", ac.InsertAdmin).Methods("POST") // Admin registration route
     r.HandleFunc("/admin/{id}", ac.UpdateAdmin).Methods("PUT") // Admin update route
     r.HandleFunc("/admin/{id}", ac.DeleteAdmin).Methods("DELETE") // Admin delete route
 

@@ -38,22 +38,29 @@
                 },
                 body: JSON.stringify({ username: username, password: password })
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error("Invalid login response");
+                }
+                return response.json();
+            })
             .then(data => {
                 if (data && data.username) {
                     localStorage.setItem("adminData", JSON.stringify(data));
-                    window.location.href = "./dashboard.html";
+                    window.location.href = "./admin_dashboard.html";
                 } else {
                     document.getElementById("loginError").style.display = "block";
                 }
             })
             .catch(error => {
                 console.error("Login error:", error);
+                document.getElementById("loginError").style.display = "block";
             });
         });
     </script>
 
 </body>
 </html>
+
 
 

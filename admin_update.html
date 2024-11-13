@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Update Admin</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+        h2 {
+            text-align: center;
+        }
+        form {
+            width: 400px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+        input {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+            border: 1px solid #ddd;
+        }
+        button {
+            background-color: #28a745;
+            color: white;
+            padding: 10px;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        img {
+            width: 100px;
+            height: 100px;
+            object-fit: cover;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<h2>Update Admin</h2>
+<form id="admin-update-form" onsubmit="submitAdminUpdate(event)">
+    <input type="hidden" id="update-admin-id">
+    
+    <!-- Only update name if provided -->
+    <label for="update-name">Name:</label>
+    <input type="text" id="update-name">
+    
+    <!-- Only update username if provided -->
+    <label for="update-username">Username:</label>
+    <input type="text" id="update-username">
+    
+    <!-- Only update email if provided -->
+    <label for="update-email">Email:</label>
+    <input type="email" id="update-email">
+    
+    <!-- Only update password if provided -->
+    <label for="update-password">Password:</label>
+    <input type="password" id="update-password">
+    
+    <!-- Only update picture if provided -->
+    <label for="update-picture">Profile Picture:</label>
+    <input type="file" id="update-picture" accept="image/*">
+    <img id="preview-image" src="" alt="Image Preview" style="display: none;">
+    
+    <button type="submit">Update Admin</button>
+</form>
+
+<script>
+    // URL থেকে `id` সংগ্রহ এবং ফর্মে সেট করা
+    document.addEventListener("DOMContentLoaded", () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const id = urlParams.get("id");
+        if (id) {
+            document.getElementById("update-admin-id").value = id;
+            fetchAdminDetails(id);  // ফর্ম লোড হওয়ার সাথে সাথে Admin এর বর্তমান তথ্য লোড করা
+        } else {
+            alert("Admin ID not found!");
+        }
+    });
+
+    // Admin এর বর্তমান তথ্য সংগ্রহ করা
+    async function fetchAdminDetails(id) {
+        try {
+            const response = await fetch(`http://localhost:8080/admin/${id}`);
+            const admin = await response.json();
+            
+            if (response.ok) {
+                // পূর্বের তথ্য ফর্মে পূরণ করা
+                document.getElementById("update-name").value = admin.name || '';
+                document.getElementById("update-username").value = admin.username || '';
+                document.getElementById("update-email").value = admin.email || '';
+                document.getElementById("update-password").value = '';  // password update will be done manually
+                if (admin.picture) {
+                    const img = document.getElementById("preview-image");
+                    img.style.display = 'block';
+                    img.src = admin.picture;
+                }
+            } else {
+                alert("Error fetching admin details");
+            }
+        } catch (error) {
+            alert("Error fetching admin details: " + error.message);
+        }
+    }
+
+    // ফর্ম সাবমিটের সময় তথ্য আপডেট করা
+    async function submitAdminUpdate(event) {
+        event.preventDefault();
+
+        const id = document.getElementById("update-admin-id").value;
+        const name = document.getElementById("update-name").value;
+        const username = document.getElementById("update-username").value;
+        const email = document.getElementById("update-email").value;
+        const password = document.getElementById("update-password").value;
+        const pictureFile = document.getElementById("update-picture").files[0];
+
+        const formData = new FormData();
+        if (name) formData.append("name", name);
+        if (username) formData.append("username", username);
+        if (email) formData.append("email", email);
+        if (password) formData.append("password", password);
+        if (pictureFile) formData.append("picture", pictureFile);
+
+        try {
+            const response = await fetch(`http://localhost:8080/admin/${id}`, {
+                method: "PUT",
+                body: formData
+            });
+
+            if (response.ok) {
+                alert("Admin updated successfully!");
+                window.location.href = "admin_dashboard.html";  // আপডেটের পরে ড্যাশবোর্ডে রিডাইরেক্ট
+            } else {
+                const responseText = await response.text();
+                alert(`Error: ${responseText || "Unknown error"}`);
+            }
+        } catch (error) {
+            alert("Error updating admin: " + error.message);
+        }
+    }
+</script>
+
+</body>
+</html>
