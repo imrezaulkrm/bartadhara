@@ -247,23 +247,33 @@ func (uc *UserController) UpdateUser(w http.ResponseWriter, r *http.Request) {
     json.NewEncoder(w).Encode(updatedUser)
 }
 
-// DeleteUser handles DELETE requests to remove a user
 func (uc *UserController) DeleteUser(w http.ResponseWriter, r *http.Request) {
-    idStr := r.URL.Query().Get("id")
+    // Path Parameter থেকে ID নিন
+    idStr := mux.Vars(r)["id"]
+
+    // ID সঠিক কিনা যাচাই
     id, err := strconv.Atoi(idStr)
     if err != nil {
         http.Error(w, "Invalid ID", http.StatusBadRequest)
         return
     }
 
+    // ডাটাবেসে ডিলিট অপারেশন
     err = database.DeleteUser(id)
     if err != nil {
-        http.Error(w, err.Error(), http.StatusInternalServerError)
+        if err.Error() == "User not found" {
+            http.Error(w, "User not found", http.StatusNotFound)
+        } else {
+            http.Error(w, "Error deleting user", http.StatusInternalServerError)
+        }
         return
     }
 
-    w.WriteHeader(http.StatusNoContent)
+    // সফল হলে বার্তা পাঠান
+    w.WriteHeader(http.StatusOK)
+    w.Write([]byte("User deleted successfully"))
 }
+
 
 // Login handles user login
 func (uc *UserController) Login(w http.ResponseWriter, r *http.Request) {
