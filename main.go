@@ -3,8 +3,8 @@ package main
 import (
     "log"
     "net/http"
-    "github.com/imrezaulkrm/bartadhara/database"
-    "github.com/imrezaulkrm/bartadhara/routes"
+    "github.com/imrezaulkrm/bartadhara-backend/database"
+    "github.com/imrezaulkrm/bartadhara-backend/routes"
     "github.com/gorilla/mux"
 )
 

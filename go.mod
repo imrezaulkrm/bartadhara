@@ -1,4 +1,4 @@
-module github.com/imrezaulkrm/bartadhara
+module github.com/imrezaulkrm/bartadhara-backend
 
 go 1.23.1
 

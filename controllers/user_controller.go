@@ -12,8 +12,8 @@ import (
     "strconv"
     "github.com/gorilla/mux"
     "golang.org/x/crypto/bcrypt"
-    "github.com/imrezaulkrm/bartadhara/models"
-    "github.com/imrezaulkrm/bartadhara/database"
+    "github.com/imrezaulkrm/bartadhara-backend/models"
+    "github.com/imrezaulkrm/bartadhara-backend/database"
 )
 // UserController struct
 type UserController struct{}

@@ -2,7 +2,7 @@ package routes
 
 import (
     "github.com/gorilla/mux"
-    "github.com/imrezaulkrm/bartadhara/controllers"
+    "github.com/imrezaulkrm/bartadhara-backend/controllers"
 )
 
 // AdminRoutes defines admin-related routes
