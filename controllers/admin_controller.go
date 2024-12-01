@@ -238,10 +238,24 @@ func (ac *AdminController) Login(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-    // Optionally, return admin data or a token
+    // Prepare a safe response with necessary fields only
+    response := map[string]interface{}{
+        "success": true,
+        "message": "Login successful",
+        "admin": map[string]interface{}{
+            "id":       dbAdmin.ID,
+            "name":     dbAdmin.Name,
+            "username": dbAdmin.Username,
+            "email":    dbAdmin.Email,
+        },
+    }
+
+    // Send response
+    w.Header().Set("Content-Type", "application/json")
     w.WriteHeader(http.StatusOK)
-    json.NewEncoder(w).Encode(dbAdmin)
+    json.NewEncoder(w).Encode(response)
 }
+
 
 // Register handles admin registration with picture upload
 func (ac *AdminController) Register(w http.ResponseWriter, r *http.Request) {
