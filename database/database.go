@@ -46,7 +46,8 @@ type Admin struct {
 // ConnectDB ডেটাবেসের সাথে সংযোগ স্থাপন করে
 func ConnectDB() {
     var err error
-    db, err = sql.Open("mysql", "root:reza1234@tcp(127.0.0.1:3306)/news_db")
+//    db, err = sql.Open("mysql", "root:reza1234@tcp(127.0.0.1:3306)/news_db")
+    db, err = sql.Open("mysql", "root:reza1234@tcp(mysql:3306)/news_db")
     if err != nil {
         log.Fatal(err)
     }
