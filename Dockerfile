@@ -25,11 +25,16 @@ RUN apk --no-cache add ca-certificates
 # Set the Current Working Directory inside the container
 WORKDIR /root/
 
-# Copy the binary from the build stage
-COPY --from=builder /app/main .
+# Create the uploads directory inside the container (make sure it's available for files)
+RUN mkdir -p /root/uploads
+
+# Copy the binary and uploads folder from the build stage
+COPY --from=builder /app/main /root/
+COPY --from=builder /app/uploads /root/uploads/
 
 # Expose the port your app runs on (change as needed)
 EXPOSE 8080
 
 # Command to run the executable
 CMD ["./main"]
+
