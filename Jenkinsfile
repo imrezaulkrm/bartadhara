@@ -3,7 +3,7 @@ pipeline {
     environment {
         DOCKERHUB_USERNAME = "imrezaulkrm"
         APP_NAME = "bartadhara"
-        IMAGE_TAG = "${BUILD_NUMBER}"
+        IMAGE_TAG = "backend"+"${BUILD_NUMBER}"
         IMAGE_NAME = "${DOCKERHUB_USERNAME}" + "/" + "${APP_NAME}"
         REGISTRY_CREDS = 'dockerhub'
         }
