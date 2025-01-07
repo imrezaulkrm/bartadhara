@@ -59,10 +59,10 @@ pipeline {
         stage('Updating Kubernetes deployment file') {
             steps {
                 sh "ls"
-                sh "cat backend.yml"
+                sh "cat k8s/backend.yml"
                 // Construct the sed command to change only line 17
                 sh """sed -i '17s#image:.*#image: ${IMAGE_NAME}:${IMAGE_TAG}#' k8s/backend.yml"""
-                sh "cat backend.yml"
+                sh "cat k8s/backend.yml"
             }
         }
 
@@ -72,8 +72,8 @@ pipeline {
                 script {
                     sh 'git config --global user.name "imrezaulkrm"'
                     sh 'git config --global user.email "sayem010ahmed@gmail.com"'
-                    sh 'git add backend.yml'
-                    sh 'git commit -m "Updated the deployment file"'
+                    sh 'git add .'
+                    sh 'git commit -m "Updated the backend.yml file"'
                     withCredentials([usernamePassword(credentialsId: 'github', passwordVariable: 'gpass', usernameVariable: 'githubuser')]) {
                         sh "git push https://$githubuser:$gpass@github.com/imrezaulkrm/bartadhara-devops.git main"
                     }
