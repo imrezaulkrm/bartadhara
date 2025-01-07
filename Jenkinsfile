@@ -23,7 +23,6 @@ pipeline {
         stage('Build Docker Image'){
             steps {
                 sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} ."
-                sh "docker build -t ${IMAGE_NAME}:latest ."
             }
         }
         stage('Push Docker Image'){
@@ -31,7 +30,6 @@ pipeline {
                 withCredentials([usernamePassword(credentialsId: 'dockerhub', passwordVariable: 'dpass', usernameVariable: 'dockeruser')]) {
                     sh "docker login -u $dockeruser --password $dpass"
                     sh "docker push ${IMAGE_NAME}:${IMAGE_TAG}"
-                    sh "docker push ${IMAGE_NAME}:latest"
                 }
             }
         }
@@ -39,7 +37,6 @@ pipeline {
         stage('Delete Docker Images'){
             steps {
                 sh "docker rmi ${IMAGE_NAME}:${IMAGE_TAG}"
-                sh "docker rmi ${IMAGE_NAME}:latest"
                 sh "cd .."
             }
         }
